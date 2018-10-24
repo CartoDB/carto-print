@@ -23,7 +23,7 @@ If using, the development version, you might want to install dependencies as wel
 
 *Only tested in Python 3*
 
-Example Usage
+Usage Example
 =============
 
 In this example we are exporting a 300 dpi and 30x20 cm image of the [Paris flood map](https://aromeu.carto.com/builder/87c5667f-3eb5-4a19-9300-b39a2d1970d1/embed)
