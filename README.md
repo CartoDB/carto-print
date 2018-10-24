@@ -21,6 +21,8 @@ If using, the development version, you might want to install dependencies as wel
 
     pip install -r requirements.txt
 
+*Only tested in Python 3*
+
 Example Usage
 =============
 
