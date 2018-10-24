@@ -35,7 +35,7 @@ printer = Printer('aromeu', '87c5667f-3eb5-4a19-9300-b39a2d1970d1', 'default_pub
 printer.export('/tmp')
 ```
 
-Where the signature of the `Printer` class is as follows:
+Where the signature of the `Printer` constructor is as follows:
 
 ```
 Printer(CARTO_USER_NAME, MAP_ID, CARTO_API_KEY, WIDTH_CM, HEIGHT_CM, ZOOM_LEVEL, BOUNDING_BOX, DPI)
