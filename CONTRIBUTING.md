@@ -4,8 +4,8 @@ Contributions are totally welcome. However, contributors must sign a Contributor
 
 ## Release process
 
-1. Update version number and information at `setup.py`, `conf.py` and `NEWS.md`.
-2. You must be maintainer at [carto pypi repo](https://pypi.python.org/pypi/carto-print/).
+1. Update version number and information at `setup.py` and `NEWS.md`.
+2. You must be maintainer at [carto-print pypi repo](https://pypi.python.org/pypi/carto-print/).
 3. Prepare a `~/.pypirc` file:
 
 ```
