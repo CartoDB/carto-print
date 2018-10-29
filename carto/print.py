@@ -5,6 +5,7 @@ from urllib.request import urlopen
 from io import BytesIO
 
 import datetime
+import json
 import math
 import time
 
@@ -47,17 +48,29 @@ def pixels_2_latlon(py, px, z):
 
 class Printer(object):
 
-    def __init__(self, username, map_id, api_key, width_cm, height_cm, zoom_level, bounds_array, dpi):
+    def __init__(self, username, map_id, api_key, width_cm, height_cm, zoom_level, bounds, dpi, mode='RGBA'):
         self.username = username
-        self.map_id = map_id
         self.api_key = api_key
+        self.map_id = map_id
         self.width = width_cm
         self.height = height_cm
         self.zoom = zoom_level
-        self.bounds = self.bounds_from_array(bounds_array)
+        self.bounds = self.create_bounds(bounds)
         self.dpi = dpi
-        self.layergroupid = self.prepare_tpl(map_id)
+        self.map_id = map_id
         self.filename = self.generate_filename()
+        self.mode = mode
+
+        self.validate_mode()
+
+        if self.bounds is None and self.zoom is None:
+            self.calculateBounds()
+
+    def calculateBounds(self):
+        url = 'https://{username}.carto.com/api/v1/map/named/{tpl}?api_key={api_key}'.format(username=self.username, tpl=self.map_id, api_key=self.api_key)
+        data = json.loads(urlopen(url).read())
+        self.bounds = data['template']['view']['bounds']
+        self.zoom = data['template']['view']['zoom']
 
     def export(self, directory):
         PIXELS_PER_CM = ONE_DPI * self.dpi
@@ -100,7 +113,7 @@ class Printer(object):
         degrees_per_pixel = dpi_ratio * tile_ratio * 360.0 / TILE_SIZE / (pow(2, z))
         px, py = latlon_2_pixels(lat, lon, z)
 
-        result = Image.new('RGBA', (x_actual_pixels, y_actual_pixels))
+        result = Image.new(self.mode, (x_actual_pixels, y_actual_pixels))
 
         px -= x_actual_pixels / 2.0  - TILE_SIZE / 2.0
         py += y_actual_pixels / 2.0 - TILE_SIZE / 2.0
@@ -120,8 +133,8 @@ class Printer(object):
                 image1 = Image.open(file_s)
                 result.paste(im=image1, box=(x * TILE_SIZE, y * TILE_SIZE))
 
-        path = '{directory}/{filename}.png'.format(directory=directory, filename=self.filename)
-        result.save(path, dpi=(self.dpi, self.dpi))
+        path = '{directory}/{filename}.{format}'.format(directory=directory, filename=self.filename, format=self.get_format())
+        result.save(path, dpi=(self.dpi, self.dpi), quality=95)
 
         return path
 
@@ -136,19 +149,27 @@ class Printer(object):
                 time.sleep(SLEEP_TIME)
                 attempt+=1
 
-    def bounds_from_array(self, bounds):
-        return {
-            'east': float(bounds.split(',')[3]),
-            'west': float(bounds.split(',')[1]),
-            'south': float(bounds.split(',')[0]),
-            'north': float(bounds.split(',')[2])
-        }
+    def create_bounds(self, bounds):
+        if bounds is None:
+            return None
+
+        if isinstance(bounds, dict):
+            return {
+                'east': float(bounds['sw'][0]),
+                'west': float(bounds['ne'][0]),
+                'south': float(bounds['ne'][1]),
+                'north': float(bounds['sw'][1])
+            }
+        else:
+            return {
+                'east': float(bounds.split(',')[3]),
+                'west': float(bounds.split(',')[1]),
+                'south': float(bounds.split(',')[0]),
+                'north': float(bounds.split(',')[2])
+            }
 
     def prepare_url(self, tile_size, lon, lat, zoom):
-        return 'https://{username}.carto.com/api/v1/map/static/named/{template}/{tile_size}/{tile_size}.png?zoom={zoom}&lat={lat}&lon={lon}&api_key={api_key}'.format(username=self.username, template=self.layergroupid, tile_size=tile_size, zoom=zoom, lat=lat, lon=lon, api_key=self.api_key)
-
-    def prepare_tpl(self, map_id):
-        return 'tpl_{}'.format(self.sanitize(map_id))
+        return 'https://{username}.carto.com/api/v1/map/static/named/{template}/{tile_size}/{tile_size}.png?zoom={zoom}&lat={lat}&lon={lon}&api_key={api_key}'.format(username=self.username, template=self.map_id, tile_size=tile_size, zoom=zoom, lat=lat, lon=lon, api_key=self.api_key)
 
     def generate_filename(self):
         return '{username}_{map_id}_{date}'.format(username=self.username, map_id=self.sanitize(self.map_id), date=datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
@@ -156,3 +177,12 @@ class Printer(object):
     def sanitize(self, anything):
         return '_'.join(anything.split('-')).strip()
 
+    def validate_mode(self):
+        if self.mode not in ['RGBA', 'CMYK']:
+            raise Exception('mode not supported')
+
+    def get_format(self):
+        if self.mode is 'RGBA':
+            return 'png'
+        else:
+            return 'jpg'
