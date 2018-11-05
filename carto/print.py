@@ -5,7 +5,6 @@ from urllib.request import urlopen
 from io import BytesIO
 
 import datetime
-import json
 import math
 import time
 
@@ -61,18 +60,9 @@ class Printer(object):
         self.map_id = map_id
         self.filename = self.generate_filename()
         self.mode = mode
-        self.server_url = server_url + '/api/v1/map/static/named/{template}/{tile_size}/{tile_size}.png?zoom={zoom}&lat={lat}&lon={lon}&api_key={api_key}'
+        self.server_url = server_url
 
         self.validate_mode()
-
-        if self.bounds is None and self.zoom is None:
-            self.calculateBounds()
-
-    def calculateBounds(self):
-        url = self.server_url.format(username=self.username, tpl=self.map_id, api_key=self.api_key)
-        data = json.loads(urlopen(url).read())
-        self.bounds = data['template']['view']['bounds']
-        self.zoom = data['template']['view']['zoom']
 
     def export(self, directory):
         PIXELS_PER_CM = ONE_DPI * self.dpi
@@ -171,7 +161,7 @@ class Printer(object):
             }
 
     def prepare_url(self, tile_size, lon, lat, zoom):
-        return self.server_url.format(username=self.username, template=self.map_id, tile_size=tile_size, zoom=zoom, lat=lat, lon=lon, api_key=self.api_key)
+        return (self.server_url + '/api/v1/map/static/named/{template}/{tile_size}/{tile_size}.png?zoom={zoom}&lat={lat}&lon={lon}&api_key={api_key}').format(username=self.username, template=self.map_id, tile_size=tile_size, zoom=zoom, lat=lat, lon=lon, api_key=self.api_key)
 
     def generate_filename(self):
         return '{username}_{map_id}_{date}'.format(username=self.username, map_id=self.sanitize(self.map_id), date=datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
