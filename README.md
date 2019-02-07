@@ -41,7 +41,7 @@ Where the signature of the `Printer` constructor is as follows:
 Printer(CARTO_USER_NAME, MAP_ID, CARTO_API_KEY, WIDTH_CM, HEIGHT_CM, ZOOM_LEVEL, BOUNDING_BOX, DPI, IMAGE_FORMAT)
 ```
 
-Where `IMAGE_FORMAT` is one of `RGB` or `CMYK`
+Where `IMAGE_FORMAT` is one of `RGBA` or `CMYK`
 
 Known Issues
 ============
