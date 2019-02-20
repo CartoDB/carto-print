@@ -21,6 +21,7 @@ DEFAULT_PRINT_TILE_SIZE = 2048
 MAX_TILE_SIZE = 8192
 DEFAULT_DPI = 72.0
 DEFAULT_SERVER_URL = 'https://{username}.carto.com'
+IMAGE_MODES = ['RGBA', 'CMYK']
 
 def latlon_2_pixels(lat, lon, z):
     initialResolution = 2 * math.pi * EARTH_RADIUS / DEFAULT_TILE_SIZE
@@ -170,7 +171,7 @@ class Printer(object):
         return '_'.join(anything.split('-')).strip()
 
     def validate_mode(self):
-        if self.mode not in ['RGBA', 'CMYK']:
+        if self.mode not in IMAGE_MODES:
             raise Exception('mode not supported')
 
     def get_format(self):

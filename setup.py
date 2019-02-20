@@ -14,4 +14,5 @@ setup(name="carto-print",
       version="0.0.3",
       url="https://github.com/CartoDB/carto-print",
       install_requires=required,
-      packages=["carto"])
+      packages=["carto"],
+      scripts=["bin/carto-print"])

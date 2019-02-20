@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+import os
+import argparse
+
+from carto.print import IMAGE_MODES, DEFAULT_SERVER_URL, Printer
+
+
+DEFAULT_API_KEY = 'default_public'
+DEFAULT_DPI = 72
+
+
+def bbox_check(bbox):
+    bbox_pts = bbox.split(',')
+
+    # Check that we have 4 values
+    if len(bbox_pts) != 4:
+        raise argparse.ArgumentTypeError('Bounding box must have 4 points.')
+
+    # Check that the values are floats
+    try:
+        min_lat, min_lon, max_lat, max_lon = map(float, bbox_pts)
+    except ValueError:
+        raise argparse.ArgumentTypeError('Bounding box points must be floats.')
+
+    # Check that the points are in range
+    if not -90 <= min_lat <= 90:
+        raise argparse.ArgumentTypeError('Bounding box south (min lat) point must be in the [-90,90] range.')
+
+    if not -90 <= max_lat <= 90:
+        raise argparse.ArgumentTypeError('Bounding box north (max lat) point must be in the [-90,90] range.')
+
+    if not -180 <= min_lon <= 180:
+        raise argparse.ArgumentTypeError('Bounding box west (min lon) point must be in the [-180,180] range.')
+
+    if not -180 <= max_lon <= 180:
+        raise argparse.ArgumentTypeError('Bounding box east (max lon) point must be in the [-180,180] range.')
+
+    # Check that max are greater than mins
+    if min_lat >= max_lat:
+        raise argparse.ArgumentTypeError('Bounding box north (max lat) point must be greater than the south (min lat) one.')
+
+    if min_lon >= max_lon:
+        raise argparse.ArgumentTypeError('Bounding box east (max lon) point must be greater than the west (min lon) one.')
+
+    return bbox
+
+
+def writable_dir(directory):
+    if not os.access(directory, os.W_OK):
+        raise argparse.ArgumentTypeError('Output directory must be writable by the user.')
+
+    return directory
+
+
+parser = argparse.ArgumentParser(
+    description='Exports images at any resolution, size and bounding box from a CARTO named map.'
+)
+
+parser.add_argument('user', metavar='USER', type=str,
+                    help='CARTO user name')
+
+parser.add_argument('map_tpl', metavar='MAP_TPL', type=str,
+                    help='map template or named map name')
+
+parser.add_argument('width', metavar='WIDTH_CM', type=int,
+                    help='width in cm')
+
+parser.add_argument('height', metavar='HEIGHT_CM', type=int,
+                    help='height in cm')
+
+parser.add_argument('zoom', metavar='ZOOM', type=int,
+                    help='zoom level')
+
+parser.add_argument('bbox', metavar='BOUNDING_BOX', type=bbox_check,
+                    help='bounding box: south,west,north,east (min lat, min lon, max lat, max lon)')
+
+parser.add_argument('--api-key', metavar='API_KEY', type=str, default=DEFAULT_API_KEY,
+                    help='CARTO api_key (default: {})'.format(DEFAULT_API_KEY))
+
+parser.add_argument('--dpi', metavar='DPI', type=int, default=DEFAULT_DPI,
+                    help='output image DPI (default: {})'.format(DEFAULT_DPI))
+
+parser.add_argument('--img-format', metavar='FORMAT', type=str, default=IMAGE_MODES[0], choices=IMAGE_MODES,
+                    help='output image format: {} (default: {})'.format(', '.join(IMAGE_MODES), IMAGE_MODES[0]))
+
+parser.add_argument('--output-dir', metavar='DIR', type=writable_dir, default=os.getcwd(),
+                    help='output directory (default: current one)')
+
+parser.add_argument('--server-url', metavar='URL', type=str, default=DEFAULT_SERVER_URL,
+                    help='server base URL, should contain the token {{username}} (default: {})'.format(DEFAULT_SERVER_URL))
+
+
+args = parser.parse_args()
+
+printer = Printer(args.user, args.map_tpl, args.api_key,
+                  args.width, args.height, args.zoom, args.bbox,
+                  args.dpi, args.img_format, args.server_url)
+
+print("Exporting...")
+print("Exported! Output file: {}".format(printer.export(args.output_dir)))
