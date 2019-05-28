@@ -1,14 +1,12 @@
-from future.standard_library import install_aliases
-install_aliases()
-
-from urllib.request import urlopen
-from io import BytesIO
-
 import datetime
 import math
 import time
 
+from io import BytesIO
 from PIL import Image
+from urllib.request import urlopen
+from future.standard_library import install_aliases
+install_aliases()
 
 DEFAULT_TILE_SIZE = 256
 EARTH_RADIUS = 6378137
@@ -23,17 +21,19 @@ DEFAULT_DPI = 72.0
 DEFAULT_SERVER_URL = 'https://{username}.carto.com'
 IMAGE_MODES = ['RGBA', 'CMYK']
 
+
 def latlon_2_pixels(lat, lon, z):
     initialResolution = 2 * math.pi * EARTH_RADIUS / DEFAULT_TILE_SIZE
     originShift = 2 * math.pi * EARTH_RADIUS / 2.0
     mx = lon * originShift / 180.0
-    my = math.log( math.tan((90 + lat) * math.pi / 360.0 )) / (math.pi / 180.0)
+    my = math.log(math.tan((90 + lat) * math.pi / 360.0)) / (math.pi / 180.0)
     my = my * originShift / 180.0
     res = initialResolution / (2**z)
     px = (mx + originShift) / res
     py = (my + originShift) / res
 
     return px, py
+
 
 def pixels_2_latlon(py, px, z):
     initialResolution = 2 * math.pi * EARTH_RADIUS / DEFAULT_TILE_SIZE
@@ -43,13 +43,15 @@ def pixels_2_latlon(py, px, z):
     my = py * res - originShift
     lon = (mx / originShift) * 180.0
     lat = (my / originShift) * 180.0
-    lat = 180 / math.pi * (2 * math.atan( math.exp( lat * math.pi / 180.0)) - math.pi / 2.0)
+    lat = 180 / math.pi * (2 * math.atan(math.exp(lat * math.pi / 180.0)) - math.pi / 2.0)
 
     return lat, lon
 
-class Printer(object):
 
-    def __init__(self, username, map_id, api_key, width_cm, height_cm, zoom_level, bounds, dpi, mode='RGBA', server_url=DEFAULT_SERVER_URL):
+class Printer(object):
+    def __init__(self, username, map_id, api_key, width_cm, height_cm,
+                 zoom_level, bounds, dpi, mode='RGBA',
+                 server_url=DEFAULT_SERVER_URL):
         self.username = username
         self.api_key = api_key
         self.map_id = map_id
@@ -71,10 +73,10 @@ class Printer(object):
         x_actual_pixels = int(self.width * PIXELS_PER_CM)
         y_actual_pixels = int(self.height * PIXELS_PER_CM)
 
-        max_y = self.bounds['west']
-        min_y = self.bounds['east']
-        max_x = self.bounds['south']
-        min_x = self.bounds['north']
+        max_y = self.bounds['north']
+        min_y = self.bounds['south']
+        max_x = self.bounds['west']
+        min_x = self.bounds['east']
 
         x_degrees = abs(max_x - min_x)
         y_degrees = abs(max_y - min_y)
@@ -108,7 +110,7 @@ class Printer(object):
 
         result = Image.new(self.mode, (x_actual_pixels, y_actual_pixels))
 
-        px -= x_actual_pixels / 2.0  - TILE_SIZE / 2.0
+        px -= x_actual_pixels / 2.0 - TILE_SIZE / 2.0
         py += y_actual_pixels / 2.0 - TILE_SIZE / 2.0
 
         i = 0
@@ -140,7 +142,7 @@ class Printer(object):
                 return file_s
             except Exception:
                 time.sleep(SLEEP_TIME)
-                attempt+=1
+                attempt += 1
 
     def create_bounds(self, bounds):
         if bounds is None:
@@ -148,17 +150,17 @@ class Printer(object):
 
         if isinstance(bounds, dict):
             return {
-                'east': float(bounds['sw'][0]),
-                'west': float(bounds['ne'][0]),
-                'south': float(bounds['ne'][1]),
-                'north': float(bounds['sw'][1])
+                'east': float(bounds['ne'][1]),
+                'west': float(bounds['sw'][1]),
+                'south': float(bounds['sw'][0]),
+                'north': float(bounds['ne'][0])
             }
         else:
             return {
-                'east': float(bounds.split(',')[3]),
-                'west': float(bounds.split(',')[1]),
-                'south': float(bounds.split(',')[0]),
-                'north': float(bounds.split(',')[2])
+                'east': float(bounds.split(',')[0]),
+                'west': float(bounds.split(',')[2]),
+                'south': float(bounds.split(',')[3]),
+                'north': float(bounds.split(',')[1])
             }
 
     def prepare_url(self, tile_size, lon, lat, zoom):
@@ -175,7 +177,7 @@ class Printer(object):
             raise Exception('mode not supported')
 
     def get_format(self):
-        if self.mode is 'RGBA':
+        if self.mode == 'RGBA':
             return 'png'
         else:
             return 'jpg'
