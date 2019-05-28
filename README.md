@@ -43,8 +43,8 @@ positional arguments:
   WIDTH_CM             width in cm
   HEIGHT_CM            height in cm
   ZOOM                 zoom level
-  BOUNDING_BOX         bounding box: south,west,north,east (min lat, min lon,
-                       max lat, max lon)
+  BOUNDING_BOX         bounding box: south,west,north,east (min lon, min lat,
+                       max lon, max lat)
 
 optional arguments:
   -h, --help           show this help message and exit
