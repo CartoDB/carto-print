@@ -19,7 +19,7 @@ def bbox_check(bbox):
 
     # Check that the values are floats
     try:
-        min_lat, min_lon, max_lat, max_lon = map(float, bbox_pts)
+        min_lon, min_lat, max_lon, max_lat = map(float, bbox_pts)
     except ValueError:
         raise argparse.ArgumentTypeError('Bounding box points must be floats.')
 
@@ -73,7 +73,7 @@ parser.add_argument('zoom', metavar='ZOOM', type=int,
                     help='zoom level')
 
 parser.add_argument('bbox', metavar='BOUNDING_BOX', type=bbox_check,
-                    help='bounding box: south,west,north,east (min lat, min lon, max lat, max lon)')
+                    help='bounding box: west,north,east,south (min lon, min lat, max lon, max lat)')
 
 parser.add_argument('--api-key', metavar='API_KEY', type=str, default=DEFAULT_API_KEY,
                     help='CARTO api_key (default: {})'.format(DEFAULT_API_KEY))
@@ -89,7 +89,6 @@ parser.add_argument('--output-dir', metavar='DIR', type=writable_dir, default=os
 
 parser.add_argument('--server-url', metavar='URL', type=str, default=DEFAULT_SERVER_URL,
                     help='server base URL, should contain the token {{username}} (default: {})'.format(DEFAULT_SERVER_URL))
-
 
 args = parser.parse_args()
 

@@ -1,3 +1,9 @@
+May-29-2019: version 0.0.6
+  - fix binary
+
+May-28-2019: version 0.0.5
+  - standardize bounding_box coordinate order
+
 Feb-20-2019: version 0.0.4
   - command line support
   
