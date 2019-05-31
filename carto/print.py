@@ -73,8 +73,8 @@ class Printer(object):
         x_actual_pixels = int(self.width * PIXELS_PER_CM)
         y_actual_pixels = int(self.height * PIXELS_PER_CM)
 
-        max_y = self.bounds['north']
-        min_y = self.bounds['south']
+        max_y = self.bounds['south']
+        min_y = self.bounds['north']
         max_x = self.bounds['west']
         min_x = self.bounds['east']
 
