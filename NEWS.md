@@ -1,4 +1,4 @@
-May-31-2019: version 0.0.7
+May-31-2019: version 0.0.8
   - raise errors
 
 May-29-2019: version 0.0.6
