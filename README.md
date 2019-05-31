@@ -62,6 +62,13 @@ In this example we are exporting a 300 dpi and 30x20 cm image of the [Paris floo
 carto-print aromeu tpl_87c5667f_3eb5_4a19_9300_b39a2d1970d1 30 20 12 1.956253,48.711127,2.835159,49.012429 --dpi 300 --img-format CMYK --output-dir /tmp
 ```
 
+For bounding boxes starting with negative coordinates, use this format:
+
+```
+carto-print aromeu tpl_87c5667f_3eb5_4a19_9300_b39a2d1970d1 30 20 12 " -1.956253,48.711127,2.835159,49.012429" --dpi 300 --img-format CMYK --output-dir /tmp
+```
+
+
 Library
 -------
 

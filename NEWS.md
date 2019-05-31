@@ -1,3 +1,6 @@
+May-31-2019: version 0.0.7
+  - raise errors
+
 May-29-2019: version 0.0.6
   - fix binary
 

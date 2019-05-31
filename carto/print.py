@@ -140,9 +140,11 @@ class Printer(object):
                 file_s = BytesIO(urlopen(url).read())
                 Image.open(file_s)
                 return file_s
-            except Exception:
+            except Exception as e:
                 time.sleep(SLEEP_TIME)
                 attempt += 1
+                if attempt >= NUM_RETRIES:
+                    raise e
 
     def create_bounds(self, bounds):
         if bounds is None:
