@@ -1,69 +1,39 @@
-import datetime
 import math
 import time
 
 from io import BytesIO
 from PIL import Image
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from future.standard_library import install_aliases
+
+from .carto_provider import DEFAULT_URL, CartoProvider
+from .utils import DEFAULT_TILE_SIZE, latlon_2_pixels, pixels_2_latlon, create_bounds
+
 install_aliases()
 
-DEFAULT_TILE_SIZE = 256
-EARTH_RADIUS = 6378137
+
 NUM_RETRIES = 5
 SLEEP_TIME = 2
 
 ONE_DPI = 0.393701
-DEFAULT_RATIO = 3
-DEFAULT_PRINT_TILE_SIZE = 2048
-MAX_TILE_SIZE = 8192
-DEFAULT_DPI = 72.0
-DEFAULT_SERVER_URL = 'https://{username}.carto.com'
 IMAGE_MODES = ['RGBA', 'CMYK']
-
-
-def latlon_2_pixels(lat, lon, z):
-    initialResolution = 2 * math.pi * EARTH_RADIUS / DEFAULT_TILE_SIZE
-    originShift = 2 * math.pi * EARTH_RADIUS / 2.0
-    mx = lon * originShift / 180.0
-    my = math.log(math.tan((90 + lat) * math.pi / 360.0)) / (math.pi / 180.0)
-    my = my * originShift / 180.0
-    res = initialResolution / (2**z)
-    px = (mx + originShift) / res
-    py = (my + originShift) / res
-
-    return px, py
-
-
-def pixels_2_latlon(py, px, z):
-    initialResolution = 2 * math.pi * EARTH_RADIUS / DEFAULT_TILE_SIZE
-    originShift = 2 * math.pi * EARTH_RADIUS / 2.0
-    res = initialResolution / (2**z)
-    mx = px * res - originShift
-    my = py * res - originShift
-    lon = (mx / originShift) * 180.0
-    lat = (my / originShift) * 180.0
-    lat = 180 / math.pi * (2 * math.atan(math.exp(lat * math.pi / 180.0)) - math.pi / 2.0)
-
-    return lat, lon
 
 
 class Printer(object):
     def __init__(self, username, map_id, api_key, width_cm, height_cm,
                  zoom_level, bounds, dpi, mode='RGBA',
-                 server_url=DEFAULT_SERVER_URL):
-        self.username = username
-        self.api_key = api_key
-        self.map_id = map_id
+                 server_url=DEFAULT_URL, provider=None):
+        if provider:
+            self.provider = provider
+        else:
+            self.provider = CartoProvider(username, api_key, map_id, server_url=server_url)
         self.width = width_cm
         self.height = height_cm
         self.zoom = zoom_level
-        self.bounds = self.create_bounds(bounds)
+        self.bounds = create_bounds(bounds)
         self.dpi = dpi
-        self.map_id = map_id
-        self.filename = self.generate_filename()
+        self.filename = self.provider.generate_filename()
         self.mode = mode
-        self.server_url = server_url
 
         self.validate_mode()
 
@@ -75,8 +45,8 @@ class Printer(object):
 
         max_y = self.bounds['south']
         min_y = self.bounds['north']
-        max_x = self.bounds['west']
-        min_x = self.bounds['east']
+        min_x = self.bounds['west']
+        max_x = self.bounds['east']
 
         x_degrees = abs(max_x - min_x)
         y_degrees = abs(max_y - min_y)
@@ -91,8 +61,8 @@ class Printer(object):
         zoom_ratio = int(math.floor(math.log(int(ratio), 2)))
         TILE_SIZE = DEFAULT_TILE_SIZE * pow(2, zoom_ratio)
 
-        if TILE_SIZE > MAX_TILE_SIZE:
-            TILE_SIZE = MAX_TILE_SIZE
+        if TILE_SIZE > self.provider.get_max_tile_size():
+            TILE_SIZE = self.provider.get_max_tile_size()
             z = self.zoom + zoom_ratio
         else:
             z = self.zoom + zoom_ratio
@@ -117,14 +87,18 @@ class Printer(object):
         num_tiles_x += 1
         num_tiles_y += 1
 
+        print('total tiles: {}'.format(str(num_tiles_x * num_tiles_y)))
         for x in range(num_tiles_x):
             for y in range(num_tiles_y):
                 i += 1
+                print('tile {}'.format(str(i)))
                 u_py = py - y * TILE_SIZE
                 u_px = px + x * TILE_SIZE
                 n_lat, n_lon = pixels_2_latlon(u_py, u_px, z)
-                url = self.prepare_url(TILE_SIZE, n_lon, n_lat, z)
+                url = self.provider.prepare_url(TILE_SIZE, n_lon, n_lat, z)
+                print(url)
                 file_s = self.requestImage(url)
+                self.provider.wait()
                 image1 = Image.open(file_s)
                 result.paste(im=image1, box=(x * TILE_SIZE, y * TILE_SIZE))
 
@@ -137,42 +111,24 @@ class Printer(object):
         attempt = 1
         while attempt <= NUM_RETRIES:
             try:
-                file_s = BytesIO(urlopen(url).read())
+                req = Request(
+                    url,
+                    headers={
+                        'User-Agent': 'peem'
+                    }
+                )
+                file_s = BytesIO(urlopen(req).read())
                 Image.open(file_s)
                 return file_s
             except Exception as e:
-                time.sleep(SLEEP_TIME)
-                attempt += 1
-                if attempt >= NUM_RETRIES:
+                print(e)
+                if self.provider.should_retry():
+                    time.sleep(SLEEP_TIME)
+                    attempt += 1
+                    if attempt >= NUM_RETRIES:
+                        raise e
+                else:
                     raise e
-
-    def create_bounds(self, bounds):
-        if bounds is None:
-            return None
-
-        if isinstance(bounds, dict):
-            return {
-                'east': float(bounds['ne'][1]),
-                'west': float(bounds['sw'][1]),
-                'south': float(bounds['sw'][0]),
-                'north': float(bounds['ne'][0])
-            }
-        else:
-            return {
-                'east': float(bounds.split(',')[0]),
-                'west': float(bounds.split(',')[2]),
-                'south': float(bounds.split(',')[3]),
-                'north': float(bounds.split(',')[1])
-            }
-
-    def prepare_url(self, tile_size, lon, lat, zoom):
-        return (self.server_url + '/api/v1/map/static/named/{template}/{tile_size}/{tile_size}.png?zoom={zoom}&lat={lat}&lon={lon}&api_key={api_key}').format(username=self.username, template=self.map_id, tile_size=tile_size, zoom=zoom, lat=lat, lon=lon, api_key=self.api_key)
-
-    def generate_filename(self):
-        return '{username}_{map_id}_{date}'.format(username=self.username, map_id=self.sanitize(self.map_id), date=datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-
-    def sanitize(self, anything):
-        return '_'.join(anything.split('-')).strip()
 
     def validate_mode(self):
         if self.mode not in IMAGE_MODES:
