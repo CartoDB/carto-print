@@ -7,7 +7,7 @@ MAX_TILE_SIZE = 256
 
 class WmsProvider(MapProvider):
 
-    def __init__(self, server_url='http://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx?SERVICE=WMS&SRS=EPSG:4326&REQUEST=GETMAP&bbox={minx},{miny},{maxx},{maxy}&width=256&height=256&format=PNG&transparent=No&layers=catastro'):
+    def __init__(self, server_url='http://www.ign.es/wms-inspire/pnoa-ma?SERVICE=WMS&SRS=EPSG:4326&REQUEST=GETMAP&bbox={minx},{miny},{maxx},{maxy}&width=256&height=256&format=PNG&transparent=No&layers=OI.OrthoimageCoverage&VERSION=1.0'):
         self.server_url = server_url
 
     def prepare_url(self, tile_size, lon, lat, zoom):

@@ -3,11 +3,11 @@ from .map_provider import MapProvider
 from .utils import latlon_2_tile
 
 MAX_TILE_SIZE = 256
-
+DEFAULT_URLS = ['https://maps1.nyc.gov/tms/1.0.0/carto/basemap/{z}/{x}/{y}.jpg']
 
 class TmsProvider(MapProvider):
 
-    def __init__(self, server_urls):
+    def __init__(self, server_urls=DEFAULT_URLS):
         self.server_urls = server_urls
         self.current = 0
 
