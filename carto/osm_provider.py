@@ -15,3 +15,6 @@ class OsmProvider(ZxyProvider):
 
     def wait(self):
         time.sleep(3)
+
+    def get_name(self):
+        return 'osm'

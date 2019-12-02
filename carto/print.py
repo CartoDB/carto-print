@@ -1,8 +1,9 @@
 import math
 import time
+import datetime
 
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw
 from urllib.request import urlopen, Request
 from future.standard_library import install_aliases
 
@@ -32,10 +33,12 @@ class Printer(object):
         self.zoom = zoom_level
         self.bounds = create_bounds(bounds)
         self.dpi = dpi
-        self.filename = self.provider.generate_filename()
         self.mode = mode
-
         self.validate_mode()
+        self.filename = self.generate_filename()
+
+    def generate_filename(self):
+        return '{name}_{date}'.format(name=self.provider.get_name(), date=datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
 
     def export(self, directory):
         PIXELS_PER_CM = ONE_DPI * self.dpi
@@ -97,9 +100,23 @@ class Printer(object):
                 n_lat, n_lon = pixels_2_latlon(u_py, u_px, z)
                 url = self.provider.prepare_url(TILE_SIZE, n_lon, n_lat, z)
                 print(url)
-                file_s = self.requestImage(url)
-                self.provider.wait()
+                if self.provider.is_cached(url, self.get_format()):
+                    print('from cache')
+                    file_s = self.provider.from_cache(url, self.get_format())
+                else:
+                    print('from url')
+                    file_s = self.requestImage(url)
+                    self.provider.wait()
                 image1 = Image.open(file_s)
+                if not self.provider.is_cached(url, self.get_format()):
+                    self.provider.save(url, image1, self.dpi, self.get_format())
+                draw = ImageDraw.Draw(image1)
+                draw.line([0, 0, 0, TILE_SIZE], fill='#ffffff', width=2)
+                draw.line([0, TILE_SIZE, TILE_SIZE, TILE_SIZE], fill='#ffffff', width=2)
+                draw.line([TILE_SIZE, TILE_SIZE, TILE_SIZE, 0], fill='#ffffff', width=2)
+                draw.line([TILE_SIZE, 0, 0, 0], fill='#ffffff', width=2)
+                # draw.line((0, image1.size[1], image1.size[0], image1.size[1]), fill=128, width=2)
+                del draw
                 result.paste(im=image1, box=(x * TILE_SIZE, y * TILE_SIZE))
 
         path = '{directory}/{filename}.{format}'.format(directory=directory, filename=self.filename, format=self.get_format())
