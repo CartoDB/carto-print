@@ -6,8 +6,8 @@ MAX_TILE_SIZE = 8192
 
 class CartoProvider(MapProvider):
 
-    def __init__(self, username, api_key, map_id, server_url=DEFAULT_URL):
-        super().__init__([server_url])
+    def __init__(self, username, api_key, map_id, server_url=DEFAULT_URL, attribution='© CARTO'):
+        super().__init__([server_url], attribution=attribution)
         self.username = username
         self.api_key = api_key
         self.map_id = map_id

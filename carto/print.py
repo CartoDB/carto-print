@@ -3,7 +3,7 @@ import time
 import datetime
 
 from io import BytesIO
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from urllib.request import urlopen, Request
 from future.standard_library import install_aliases
 
@@ -23,7 +23,7 @@ IMAGE_MODES = ['RGBA', 'CMYK']
 class Printer(object):
     def __init__(self, username, map_id, api_key, width_cm, height_cm,
                  zoom_level, bounds, dpi, mode='RGBA',
-                 server_url=DEFAULT_URL, provider=None):
+                 server_url=DEFAULT_URL, provider=None, debug=False):
         if provider:
             self.provider = provider
         else:
@@ -36,6 +36,7 @@ class Printer(object):
         self.mode = mode
         self.validate_mode()
         self.filename = self.generate_filename()
+        self.debug = debug
 
     def generate_filename(self):
         return '{name}_{date}'.format(name=self.provider.get_name(), date=datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
@@ -110,14 +111,20 @@ class Printer(object):
                 image1 = Image.open(file_s)
                 if not self.provider.is_cached(url, self.get_format()):
                     self.provider.save(url, image1, self.dpi, self.get_format())
-                draw = ImageDraw.Draw(image1)
-                draw.line([0, 0, 0, TILE_SIZE], fill='#ffffff', width=2)
-                draw.line([0, TILE_SIZE, TILE_SIZE, TILE_SIZE], fill='#ffffff', width=2)
-                draw.line([TILE_SIZE, TILE_SIZE, TILE_SIZE, 0], fill='#ffffff', width=2)
-                draw.line([TILE_SIZE, 0, 0, 0], fill='#ffffff', width=2)
-                # draw.line((0, image1.size[1], image1.size[0], image1.size[1]), fill=128, width=2)
-                del draw
+                if self.debug:
+                    draw = ImageDraw.Draw(image1)
+                    draw.line([0, 0, 0, TILE_SIZE], fill='#ffffff', width=2)
+                    draw.line([0, TILE_SIZE, TILE_SIZE, TILE_SIZE], fill='#ffffff', width=2)
+                    draw.line([TILE_SIZE, TILE_SIZE, TILE_SIZE, 0], fill='#ffffff', width=2)
+                    draw.line([TILE_SIZE, 0, 0, 0], fill='#ffffff', width=2)
+                    del draw
+
                 result.paste(im=image1, box=(x * TILE_SIZE, y * TILE_SIZE))
+
+        if self.provider.get_attribution():
+            draw = ImageDraw.Draw(result)
+            font = ImageFont.load_default().font
+            draw.text((10, 10), self.provider.get_attribution(), font=font)
 
         path = '{directory}/{filename}.{format}'.format(directory=directory, filename=self.filename, format=self.get_format())
         result.save(path, dpi=(self.dpi, self.dpi), quality=95)

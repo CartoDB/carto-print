@@ -7,8 +7,8 @@ DEFAULT_URL = 'http://www.ign.es/wmts/pnoa-ma?FORMAT=image%2Fjpeg&VERSION=1.0.0&
 
 class WmtsProvider(ZxyProvider):
 
-    def __init__(self, server_url=DEFAULT_URL):
-        super().__init__([server_url])
+    def __init__(self, server_url=DEFAULT_URL, attribution=None):
+        super().__init__([server_url], attribution=attribution)
 
     def wait(self):
         time.sleep(0.2)

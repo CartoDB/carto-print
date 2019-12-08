@@ -6,10 +6,11 @@ from .utils import DEFAULT_TILE_SIZE, latlon_2_tile
 
 class MapProvider(ABC):
 
-    def __init__(self, urls):
+    def __init__(self, urls, attribution=None):
         super().__init__()
         self.urls = urls
         self.current_url = 0
+        self.attribution = attribution
 
     @abstractmethod
     def do_prepare_url(self, url, tile_size, lon, lat, zoom, x, y):
@@ -18,6 +19,9 @@ class MapProvider(ABC):
     @abstractmethod
     def get_name(self):
         pass
+
+    def get_attribution(self):
+        return self.attribution
 
     def prepare_url(self, tile_size, lon, lat, zoom):
         x, y = latlon_2_tile(lat, lon, zoom)

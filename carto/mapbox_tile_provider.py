@@ -21,8 +21,8 @@ STYLES = [
 
 class MapboxTileProvider(ZxyProvider):
 
-    def __init__(self, token, username='mapbox', style=STYLES[0], server_urls=DEFAULT_URLS):
-        super().__init__(server_urls)
+    def __init__(self, token, username='mapbox', style=STYLES[0], server_urls=DEFAULT_URLS, attribution='© Mapbox © OpenStreetMap contributors'):
+        super().__init__(server_urls, attribution=attribution)
         self.token = token
         self.style = style
         self.username = username

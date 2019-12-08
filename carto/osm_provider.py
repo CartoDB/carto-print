@@ -10,8 +10,8 @@ DEFAULT_URLS = [
 
 class OsmProvider(ZxyProvider):
 
-    def __init__(self, server_urls=DEFAULT_URLS):
-        super().__init__(server_urls)
+    def __init__(self, server_urls=DEFAULT_URLS, attribution='© OpenStreetMap contributors'):
+        super().__init__(server_urls, attribution=attribution)
 
     def wait(self):
         time.sleep(3)
