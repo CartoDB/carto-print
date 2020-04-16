@@ -26,3 +26,6 @@ class CartoProvider(MapProvider):
 
     def get_name(self):
         return 'carto'
+
+    def is_cached(self, url, format):
+        return False
