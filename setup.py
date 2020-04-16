@@ -5,7 +5,7 @@ try:
     with open('requirements.txt') as f:
         required = f.read().splitlines()
 except:
-    required = ['Pillow==5.3.0', 'future==0.16.0']
+    required = ['Pillow==6.2.0', 'future==0.16.0', 'mercantile==1.1.2']
 
 setup(name="carto-print",
       author="Alberto Romeu",
