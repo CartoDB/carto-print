@@ -1,2 +1,2 @@
-Pillow==6.2.0
+Pillow==10.0.1
 future==0.16.0
